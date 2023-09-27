@@ -17,7 +17,8 @@ For example, you could write a script that uses Get-MSIDatabaseTable to retrieve
 If necessary, you could create a transform to go with the original MSI that contains any necessary customizations.
 
 ## Future Plans
-I'd like to add an Add-MSIDatabaseTableRow function at some point, but it's late and I'm out of wine. 
+~I'd like to add an Add-MSIDatabaseTableRow function at some point, but it's late and I'm out of wine.~
+Add DELETE FROM, CREATE TABLE, DROP TABLE, etc. Maybe also a function that allows manual execution of a provided query. 
 
 ## Functions in the Module
 Import the module and use Get-Help for examples and full documentation.
