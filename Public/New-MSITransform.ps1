@@ -55,7 +55,7 @@ Function New-MSITransform {
 
         #Figure out the output path
         if (!$OutputMSTPath) {
-            [System.IO.FileInfo]$OutputMSTPath = "$($ReferenceMSIPath.FullName).mst"
+            [System.IO.FileInfo]$OutputMSTPath = "$([System.IO.Path]::GetFileNameWithoutExtension($ReferenceMSIPath.Fullname)).mst"
         }
 
         #Make sure that the destination directory exists
