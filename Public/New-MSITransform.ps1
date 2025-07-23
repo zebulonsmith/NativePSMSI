@@ -30,42 +30,41 @@ Function New-MSITransform {
 
     param(
         [Parameter(Mandatory=$true)]
-        [System.IO.FileInfo]
-        $ReferenceMSIPath,
+        [String]$ReferenceMSIPath,
 
         [Parameter(Mandatory=$true)]
-        [System.IO.FileInfo]
-        $DifferenceMSIPath,
+        [String]$DifferenceMSIPath,
 
         [parameter(Mandatory=$false)]
         [ValidatePattern('.*\.mst$')]
-        [System.IO.FileInfo]
-        $OutputMSTPath
+        [String]$OutputMSTPath
     )
 
         #validate that the files exist
         Write-Verbose "Validating file paths"
         if (!(test-path -path $ReferenceMSIPath -PathType Leaf)) {
-            Throw [System.IO.FileNotFoundException]::New("File $($ReferenceMSIPath.FullName) not found.")
+            Throw [System.IO.FileNotFoundException]::New("File $($ReferenceMSIPath) not found.")
         }
 
         if (!(test-path -path $DifferenceMSIPath -PathType Leaf)) {
-            Throw [System.IO.FileNotFoundException]::New("File $($DifferenceMSIPath.FullName) not found.")
+            Throw [System.IO.FileNotFoundException]::New("File $($DifferenceMSIPath) not found.")
         }
 
         #Figure out the output path
         if (!$OutputMSTPath) {
-            [System.IO.FileInfo]$OutputMSTPath = "$([System.IO.Path]::GetFileNameWithoutExtension($ReferenceMSIPath.Fullname)).mst"
+            [System.IO.FileInfo]$OutputMSTPathObject = "$([System.IO.Path]::GetFileNameWithoutExtension($ReferenceMSIPath)).mst"
+        } else {
+            [System.IO.FileInfo]$OutputMSTPathObject = $OutputMSTPath
         }
 
         #Make sure that the destination directory exists
-        if (!(Test-path -path $OutputMSTPath.Directory)) {
-            throw [System.IO.DirectoryNotFoundException]::New("Output directory $($OutputMSTPath.Directory) does not exist.")
+        if (!(Test-path -path $OutputMSTPathObject.Directory)) {
+            throw [System.IO.DirectoryNotFoundException]::New("Output directory $($OutputMSTPathObject.Directory) does not exist.")
         }
 
         #Make sure that the output mst doesn't exist already
-        if (Test-path -path $OutputMSTPath) {
-            throw [System.IO.IOException]::new("Output MST file $($OutputMSTPath.fullname) already exists.")
+        if (Test-path -path $OutputMSTPathObject.FullName -PathType Leaf) {
+            throw [System.IO.IOException]::new("Output MST file $($OutputMSTPathObject.fullname) already exists.")
         }
 
         #Load the WindowsInstaller
@@ -80,7 +79,7 @@ Function New-MSITransform {
         #open the diff MSI database read only
         Write-Verbose "Opening diff MSI"
         Try {
-            $DiffMSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($DifferenceMSIPath.fullname, 0))
+            $DiffMSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($DifferenceMSIPath, 0))
         } Catch {
             Write-Error "Failed to open MSI Database $($DifferenceMSIPath.fullname)."
             [System.Runtime.InteropServices.Marshal]::ReleaseComObject($WindowsInstaller) | Out-null
@@ -90,7 +89,7 @@ Function New-MSITransform {
         #Open the reference MSI database read only
         Write-Verbose "Opening Reference MSI"
         Try {
-            $ReferenceMSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($ReferenceMSIPath.fullname, 0))
+            $ReferenceMSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($ReferenceMSIPath, 0))
         } Catch {
             Write-Error "Failed to open MSI Database $($ReferenceMSIPath.fullname)."
             [System.Runtime.InteropServices.Marshal]::ReleaseComObject($DiffMSIDBObject) | Out-Null
@@ -103,7 +102,7 @@ Function New-MSITransform {
         Write-verbose "Generating transform"
 
         Try {
-            $Transform = $DiffMSIDBObject.Gettype().InvokeMember("GenerateTransform","InvokeMethod",$null,$DiffMSIDBObject,@($ReferenceMSIDBObject,$OutputMSTPath.FullName))
+            $Transform = $DiffMSIDBObject.Gettype().InvokeMember("GenerateTransform","InvokeMethod",$null,$DiffMSIDBObject,@($ReferenceMSIDBObject,$OutputMSTPathObject.FullName))
         } Catch {
             Write-Error "Could not create MST file.`n$($Transform)"
             [System.Runtime.InteropServices.Marshal]::ReleaseComObject($DiffMSIDBObject) | Out-Null
@@ -114,7 +113,7 @@ Function New-MSITransform {
 
         #Add the MSI summary data to the MSI
         Try {
-            $Summary = $DiffMSIDBObject.Gettype().InvokeMember("CreateTransformSummaryInfo","InvokeMethod",$null,$DiffMSIDBObject,@($ReferenceMSIDBObject,$OutputMSTPath.FullName,0,0))
+            $Summary = $DiffMSIDBObject.Gettype().InvokeMember("CreateTransformSummaryInfo","InvokeMethod",$null,$DiffMSIDBObject,@($ReferenceMSIDBObject,$OutputMSTPathObject.FullName,0,0))
         } Catch {
             Write-Error "Failed to add summary info to $($OutputMSTPath.FullName)`n$($Summary)"
             [System.Runtime.InteropServices.Marshal]::ReleaseComObject($DiffMSIDBObject) | Out-Null

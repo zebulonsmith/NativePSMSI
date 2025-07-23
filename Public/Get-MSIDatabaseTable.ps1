@@ -38,7 +38,7 @@ Function Get-MSIDatabaseTable {
     #>
     param (
         [Parameter(Mandatory=$true)]
-        [System.IO.FileInfo]$MSIPath,
+        [String]$MSIPath,
 
         [Parameter(Mandatory=$false)]
         [string]$MSITableName = "Property",
@@ -64,7 +64,9 @@ Function Get-MSIDatabaseTable {
 
     #validate that the file exists
     if (!(test-path -path $MSIPath -PathType Leaf)) {
-        Throw [System.IO.FileNotFoundException]::New("File $($MSIPath.FullName) not found.")
+        Throw [System.IO.FileNotFoundException]::New("File $($MSIPath) not found.")
+    } else {
+        $MSIFile = Get-Item -Path $MSIPath
     }
 
     #Load the WindowsInstaller
@@ -77,9 +79,9 @@ Function Get-MSIDatabaseTable {
 
      #Open the MSI file as Read Only
      Try {
-        $MSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($MSIPath.fullname, 0))
+        $MSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($MSIFile.fullname, 0))
     } Catch {
-        Write-Error "Failed to open MSI Database $($msipath.FullName)."
+        Write-Error "Failed to open MSI Database $($MSIFile.FullName)."
         Throw $_
     }
 

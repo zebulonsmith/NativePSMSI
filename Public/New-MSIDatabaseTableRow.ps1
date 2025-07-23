@@ -20,16 +20,19 @@ Function New-MSIDatabaseTableRow {
 
     .EXAMPLE
     Insert Directory='Stink' Directory_Parent='Stank' DefaultDir='Stunk' into the Directory table.
-    New-MSIDatabaseTableRow -MSIPath "C:\Users\zebul\OneDrive\Got Bored and Wrote Code\PackageManagerDrafts\7z2201-x64 - Modified.msi" -MSITableName Directory -ColumnList "Directory, Directory_Parent, DefaultDir" -ValueList "'Stink', 'Stank', 'Stunk'"
+    New-MSIDatabaseTableRow -MSIPath ".\7z2201-x64 - Modified.msi" -MSITableName Directory -ColumnList "Directory, Directory_Parent, DefaultDir" -ValueList "'Stink', 'Stank', 'Stunk'"
 
     .EXAMPLE
     Same as above, but returns the query that will be executed instead of making changes.
-    New-MSIDatabaseTableRow -MSIPath "C:\Users\zebul\OneDrive\Got Bored and Wrote Code\PackageManagerDrafts\7z2201-x64 - Modified.msi" -MSITableName Directory -ColumnList "Directory, Directory_Parent, DefaultDir" -ValueList "'Stink', 'Stank', 'Stunk'" -TestQueryOnly
+    New-MSIDatabaseTableRow -MSIPath ".\7z2201-x64 - Modified.msi" -MSITableName Directory -ColumnList "Directory, Directory_Parent, DefaultDir" -ValueList "'Stink', 'Stank', 'Stunk'" -TestQueryOnly
 
+    .EXAMPLE
+    Insert Property='TestProperty' Value='TestValue' into the Property table.
+    New-MSIDatabaseTableRow -MSIPath ".\7z2201-x64 - Modified.msi" -MSITableName "Property" -ColumnList "Property, Value" -ValueList "'TestProperty','TestValue'"
     #>
     param (
         [Parameter(Mandatory=$true)]
-        [System.IO.FileInfo]$MSIPath,
+        [String]$MSIPath,
 
         [Parameter(Mandatory=$true)]
         [string]
@@ -56,7 +59,9 @@ Function New-MSIDatabaseTableRow {
 
     #validate that the file exists
     if (!(test-path -path $MSIPath -PathType Leaf)) {
-        Throw [System.IO.FileNotFoundException]::New("File $($MSIPath.FullName) not found.")
+        Throw [System.IO.FileNotFoundException]::New("File $($MSIPath) not found.")
+    } else {
+        $MSIFile = Get-Item -Path $MSIPath
     }
 
     #Load the WindowsInstaller
@@ -69,9 +74,9 @@ Function New-MSIDatabaseTableRow {
 
     #Open the MSI file in Transact mode
      Try {
-        $MSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($MSIPath.fullname, 1))
+        $MSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($MSIFile.fullname, 1))
     } Catch {
-        Write-Error "Failed to open MSI Database $($MSIPath.FullName)."
+        Write-Error "Failed to open MSI Database $($MSIFile.FullName)."
         Throw $_
     }
 

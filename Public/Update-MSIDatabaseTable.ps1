@@ -26,16 +26,19 @@ Function Update-MSIDatabaseTable {
     https://github.com/zebulonsmith/NativePSMSI
 
     .EXAMPLE
-    Change the DefaultDir column where Directory = INSTALLDIR
+    Change the DefaultDir column in the Directory table where Directory = INSTALLDIR
     Update-MSIDatabaseTable -MSIPath '.\7z2201-x64 - Modified.msi' -MSITableName "Directory" -PrimaryKeyName "Directory" -PrimaryKeyValue "INSTALLDIR" -ValueToChange "DefaultDir" -NewValue "7-Zoop"
 
     .EXAMPLE
     Same as above, but return the query without making changes.
     Update-MSIDatabaseTable -MSIPath '.\7z2201-x64 - Modified.msi' -MSITableName "Directory" -PrimaryKeyName "Directory" -PrimaryKeyValue "INSTALLDIR" -ValueToChange "DefaultDir" -NewValue "7-Zoop" -TestQueryOnly
+
+    .EXAMPLE Change the Value column in the Property table where Property = TestProperty.
+    Update-MSIDatabaseTable -MSIPath '.\7z2201-x64 - Modified.msi' -MSITableName Property -PrimaryKeyName Property -PrimaryKeyValue "TestProperty" -ValueToChange "Value" -NewValue "NewTestValue"
     #>
     param (
         [Parameter(Mandatory=$true)]
-        [System.IO.FileInfo]$MSIPath,
+        [String]$MSIPath,
 
         [Parameter(Mandatory=$true)]
         [string]
@@ -71,6 +74,8 @@ Function Update-MSIDatabaseTable {
     #validate that the file exists
     if (!(test-path -path $MSIPath -PathType Leaf)) {
         Throw [System.IO.FileNotFoundException]::New("File $($MSIPath.FullName) not found.")
+    }else {
+        $MSIFile = Get-Item -Path $MSIPath
     }
 
     #Load the WindowsInstaller
@@ -83,9 +88,9 @@ Function Update-MSIDatabaseTable {
 
     #Open the MSI file in Transact mode
      Try {
-        $MSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($MSIPath.fullname, 1))
+        $MSIDBObject = $WindowsInstaller.Gettype().InvokeMember("OpenDatabase", "InvokeMethod", $null, $WindowsInstaller, @($MSIFile.fullname, 1))
     } Catch {
-        Write-Error "Failed to open MSI Database $($MSIPath.FullName)."
+        Write-Error "Failed to open MSI Database $($MSIFile.FullName)."
         Throw $_
     }
 
